@@ -1,8 +1,76 @@
 import { BryntumGanttProps } from '@bryntum/gantt-angular';
+import '../lib/CellEditOverride.js';
 import '../lib/GanttToolbar.js';
 import '../lib/StatusColumn.js';
+import '../lib/GanttOverride.js';
 import Task from '../lib/Task.js';
+import Project from '../lib/Project.js';
 import { AjaxHelper, TaskModel } from '@bryntum/gantt'
+
+function generateRandomId() {
+    return Math.random().toString(36).substr(2, 9); // Random string of 9 characters
+  }
+
+const project = new Project({
+    // *** start test
+    addConstraintOnDateSet: false,
+    autoSetConstraints: false,
+    autoSync: true,
+    autoSyncTimeout: 400,
+    skipNonWorkingTimeWhenSchedulingManually: true,
+    skipNonWorkingTimeInDurationWhenSchedulingManually: true,
+    resetUndoRedoQueuesAfterLoad: true,
+
+    taskStore: {
+        listeners: {
+            add: (event) => {
+                const addedRecords = event.records;
+                if (addedRecords?.length > 0) {
+                    addedRecords.forEach((record: TaskModel & { wbsCode: string, isValid: boolean }) => {
+                        record.set('name', generateRandomId());
+                        //console.log('taskStore.add event', record.wbsCode + ' ' + record.get('Name'), record.get('Id'), record.isValid);
+                    });
+                for (let i = 0; i < 1000000000; ++i) {
+
+                }    
+                }
+            },
+            catchAll: (event: any) => {
+                //console.log('taskStore.catchAll', event.eventName);
+            }
+        }
+    },
+    // *** end test
+
+    // autoSetConstraints : true,
+    // Let the Project know we want to use our own Task model with custom fields / methods
+    taskModelClass     : Task,
+    transport          : {
+        load : {
+            url : 'assets/data/launch-saas.json'
+        },
+
+        // *** start test
+        sync : {
+            url : './sync-changes'
+        }
+        // *** end test
+    },
+    autoLoad : true,
+
+    // The State TrackingManager, which the UndoRedo widget in the toolbar uses
+    stm : {
+        // NOTE, that this option does not enable the STM itself, this is done by the `undoredo` widget, defined in the toolbar
+        // If you don't use `undoredo` widget in your app, you need to enable STM manually: `stm.enable()`,
+        // otherwise, it won't be tracking changes in the data
+        // It's usually best to enable STM after the initial data loading is completed.
+        autoRecord : true
+    },
+
+    // This config enables response validation and dumping of found errors to the browser console.
+    // It's meant to be used as a development stage helper only, so please set it to false for production systems.
+    validateResponse : true
+},);
 
 // *** start test
 let modifiedTasks = [];
@@ -27,103 +95,19 @@ const ganttProps : BryntumGanttProps = {
     // fillHandle: true,
     // *** end test
 
+    dependencies: {
+        //@ts-ignore
+        drawOnScroll: false,
+      },
+
     dependencyIdField : 'wbsCode',
     selectionMode     : {
         cell       : true,
         dragSelect : true,
         rowNumber  : true
     },
-    project : {
-        // *** start test
-        addConstraintOnDateSet: false,
-        autoSetConstraints: false,
-        autoSync: true,
-        autoSyncTimeout: 400,
-        skipNonWorkingTimeWhenSchedulingManually: true,
-        skipNonWorkingTimeInDurationWhenSchedulingManually: true,
-        resetUndoRedoQueuesAfterLoad: true,
 
-        listeners: {
-            catchAll: (event) => {
-                console.log('project.catchAll', event.eventName);
-            },
-            beforeSync: (params: {pack}) => {
-                const pack = params.pack;
-                console.log('listeners.beforeSync', pack);
-                const added = pack.tasks?.added;
-                const updated = pack.tasks?.updated;
-                const removed = pack.tasks?.removed;
-                console.log('CfGanttService.beforeSync', added, pack);
-                if (added && added.length > 0) {
-                    console.log('Added tasks: ', added.length);
-                    added.forEach((task: {Name: string, PhantomId: string, __record__: { wbsCode: string} }) => {
-                        console.log('Added task: ', (task.__record__.wbsCode + ' ' + task.Name), task.PhantomId);
-                    });
-                }
-
-                // Create mock data
-                requestId = pack.requestId;
-                if (added?.length > 0) {
-                    modifiedTasks = added;
-                } else {
-                    modifiedTasks = [];
-                }
-                if (updated?.length > 0) {
-                    modifiedTasks.concat(updated);
-                }
-                if (removed?.length > 0) {
-                    removedTasks = removed;
-                } else {
-                    removedTasks = [];
-                }
-            },
-        },
-        taskStore: {
-            listeners: {
-                add: (event) => {
-                    const addedRecords = event.records;
-                    if (addedRecords?.length > 0) {
-                        addedRecords.forEach((record: TaskModel & { wbsCode: string, isValid: boolean }) => {
-                            console.log('taskStore.add event', record.wbsCode + ' ' + record.get('Name'), record.get('Id'), record.isValid);
-                        });
-                    }
-                },
-                catchAll: (event: any) => {
-                    console.log('taskStore.catchAll', event.eventName);
-                }
-            }
-        },
-        // *** end test
-
-        // autoSetConstraints : true,
-        // Let the Project know we want to use our own Task model with custom fields / methods
-        taskModelClass     : Task,
-        transport          : {
-            load : {
-                url : 'assets/data/launch-saas.json'
-            },
-
-            // *** start test
-            sync : {
-                url : './sync-changes'
-            }
-            // *** end test
-        },
-        autoLoad : true,
-
-        // The State TrackingManager, which the UndoRedo widget in the toolbar uses
-        stm : {
-            // NOTE, that this option does not enable the STM itself, this is done by the `undoredo` widget, defined in the toolbar
-            // If you don't use `undoredo` widget in your app, you need to enable STM manually: `stm.enable()`,
-            // otherwise, it won't be tracking changes in the data
-            // It's usually best to enable STM after the initial data loading is completed.
-            autoRecord : true
-        },
-
-        // This config enables response validation and dumping of found errors to the browser console.
-        // It's meant to be used as a development stage helper only, so please set it to false for production systems.
-        validateResponse : true
-    },
+    project: project,
 
     startDate               : '2019-01-12',
     endDate                 : '2019-03-24',
@@ -175,12 +159,15 @@ const ganttProps : BryntumGanttProps = {
     // *** start test
     listeners: {
         catchAll: (event) => {
-            console.log('gantt.catchAll', event.eventName);
+            //console.log('gantt.catchAll', event.eventName);
         }
     },
     // *** end test
 
     subGridConfigs : {
+        fixed : {
+            flex : 3
+        },
         locked : {
             flex : 3
         },
@@ -190,6 +177,13 @@ const ganttProps : BryntumGanttProps = {
     },
 
     columnLines : false,
+
+    rowReorderFeature: {
+        gripOnly: true,
+        showGrip: true,
+        // Preserve sorters after a drop operation, if that operation leads to the store still being sorted.
+        preserveSorters: true,
+      },
 
     rollupsFeature : {
         disabled : true
@@ -227,24 +221,39 @@ const ganttProps : BryntumGanttProps = {
     }
 };
 
+function randomInt(): number {
+    return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER));
+}
+
 // *** start test
-AjaxHelper.mockUrl('./sync-changes', (props: any) => {
+AjaxHelper.mockUrl('./sync-changes', (url: any, params: any, options: any) => {
+    const body = JSON.parse(options.body);
+    const tasks = {
+        rows: (body.tasks.added as any[]) ?? [],
+        removed : body.tasks.removed ?? [],
+        //updated: body.tasks.updated ?? [],
+    };
+
+    tasks.rows = tasks.rows.map((entry) => (
+         {
+            ...entry,
+            id: randomInt(),
+        }
+    ));
+
     return {
         success: true,
-        requestId: requestId,
+        requestId: body.requestId,
         responseText: JSON.stringify({
             success: true,
-            requestId: 4711,
+            requestId: body.requestId,
             dependencies: {
                 rows: [],
                 removed: []
             },
-            tasks: {
-                rows: modifiedTasks,
-                removed : removedTasks,
-            },
+            tasks: tasks,
         }),
-        delay: 1000
+        delay: 400
     };
 });
 // *** end test
