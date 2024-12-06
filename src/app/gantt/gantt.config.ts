@@ -2,7 +2,6 @@ import { BryntumGanttProps } from '@bryntum/gantt-angular';
 import '../lib/CellEditOverride.js';
 import '../lib/GanttToolbar.js';
 import '../lib/StatusColumn.js';
-import '../lib/GanttOverride.js';
 import Task from '../lib/Task.js';
 import Project from '../lib/Project.js';
 import { AjaxHelper } from '@bryntum/gantt'
