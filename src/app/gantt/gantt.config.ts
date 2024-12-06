@@ -6,6 +6,16 @@ import Task from '../lib/Task.js';
 import Project from '../lib/Project.js';
 import { AjaxHelper } from '@bryntum/gantt'
 
+function keepBusy(waitTimeMilliseconds: number) {
+    const start = Date.now();
+    while (true) {
+        const elapsedMilliseconds = (Date.now() - start);
+        if (elapsedMilliseconds > waitTimeMilliseconds) {
+            break;
+        }
+    }
+}
+
 const project = new Project({
     // *** start test
     addConstraintOnDateSet: false,
@@ -20,7 +30,7 @@ const project = new Project({
         listeners: {
             add: () => {
                 // keep busy for a while to trigger the sync bug
-                for (let i = 0; i < 1000000000; ++i) {}
+                keepBusy(500);
             },
         }
     },
