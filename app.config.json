@@ -19,6 +19,7 @@
     "src/app/gantt/gantt.component.html",
     "src/app/gantt/gantt.component.ts",
     "src/app/gantt/gantt.config.ts",
+    "src/app/lib/CellEditOverride.js",
     "src/app/lib/GanttToolbar.js",
     "src/app/lib/StatusColumn.js",
     "src/app/lib/Task.js",

@@ -1,39 +1,64 @@
 import { BryntumGanttProps } from '@bryntum/gantt-angular';
+import '../lib/CellEditOverride.js';
 import '../lib/GanttToolbar.js';
 import '../lib/StatusColumn.js';
 import Task from '../lib/Task.js';
+import Project from '../lib/Project.js';
+import { AjaxHelper } from '@bryntum/gantt'
+
+const project = new Project({
+    // *** start test
+    addConstraintOnDateSet: false,
+    autoSetConstraints: false,
+    autoSync: true,
+    autoSyncTimeout: 400,
+    skipNonWorkingTimeWhenSchedulingManually: true,
+    skipNonWorkingTimeInDurationWhenSchedulingManually: true,
+    resetUndoRedoQueuesAfterLoad: true,
+
+    taskStore: {
+        listeners: {
+            add: () => {
+                // keep busy for a while to trigger the sync bug
+                for (let i = 0; i < 1000000000; ++i) {}
+            },
+        }
+    },
+
+    // Let the Project know we want to use our own Task model with custom fields / methods
+    taskModelClass     : Task,
+    transport          : {
+        load : {
+            url : 'assets/data/launch-saas.json'
+        },
+        sync : {
+            url : './sync-changes'
+        }
+    },
+    autoLoad : true,
+
+    stm : {
+        autoRecord : true
+    },
+    validateResponse : true
+},);
 
 const ganttProps : BryntumGanttProps = {
+    showDirty: true,
+    scrollTaskIntoViewOnCellClick: true,
+
+    cellEditFeature: {
+        addToCurrentParent: true,
+    },
+
     dependencyIdField : 'wbsCode',
     selectionMode     : {
         cell       : true,
         dragSelect : true,
         rowNumber  : true
     },
-    project : {
-        autoSetConstraints : true,
-        // Let the Project know we want to use our own Task model with custom fields / methods
-        taskModelClass     : Task,
-        transport          : {
-            load : {
-                url : 'assets/data/launch-saas.json'
-            }
-        },
-        autoLoad : true,
 
-        // The State TrackingManager, which the UndoRedo widget in the toolbar uses
-        stm : {
-            // NOTE, that this option does not enable the STM itself, this is done by the `undoredo` widget, defined in the toolbar
-            // If you don't use `undoredo` widget in your app, you need to enable STM manually: `stm.enable()`,
-            // otherwise, it won't be tracking changes in the data
-            // It's usually best to enable STM after the initial data loading is completed.
-            autoRecord : true
-        },
-
-        // This config enables response validation and dumping of found errors to the browser console.
-        // It's meant to be used as a development stage helper only, so please set it to false for production systems.
-        validateResponse : true
-    },
+    project: project,
 
     startDate               : '2019-01-12',
     endDate                 : '2019-03-24',
@@ -43,27 +68,13 @@ const ganttProps : BryntumGanttProps = {
         { type : 'name', width : 250, showWbs : true },
         { type : 'startdate' },
         { type : 'duration' },
-        { type : 'resourceassignment', width : 120, showAvatars : true },
-        { type : 'percentdone', mode : 'circle', width : 70 },
-        {
-            type  : 'predecessor',
-            width : 112
-        },
-        {
-            type  : 'successor',
-            width : 112
-        },
-        { type : 'schedulingmodecolumn' },
         { type : 'calendar' },
         { type : 'constrainttype' },
         { type : 'constraintdate' },
-        // @ts-ignore This is an application custom column
-        { type : 'statuscolumn' },
-        {
-            type  : 'date',
-            text  : 'Deadline',
-            field : 'deadline'
-        },
+        { type : 'earlystartdate' },
+        { type : 'earlyenddate' },
+        { type : 'latestartdate' },
+        { type : 'lateenddate' },
         { type : 'addnew' }
     ],
 
@@ -95,10 +106,6 @@ const ganttProps : BryntumGanttProps = {
 
     dependencyEditFeature : true,
 
-    timeRangesFeature : {
-        showCurrentTimeLine : true
-    },
-
     labelsFeature : {
         left : {
             field  : 'name',
@@ -113,5 +120,39 @@ const ganttProps : BryntumGanttProps = {
         type : 'gantttoolbar'
     }
 };
+
+function randomInt(): number {
+    return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER));
+}
+
+AjaxHelper.mockUrl('./sync-changes', (url: any, params: any, options: any) => {
+    const body = JSON.parse(options.body);
+    const tasks = {
+        rows: (body.tasks.added as any[]) ?? [],
+        removed : body.tasks.removed ?? [],
+    };
+
+    tasks.rows = tasks.rows.map((entry) => (
+         {
+            ...entry,
+            id: randomInt(),
+        }
+    ));
+
+    return {
+        success: true,
+        requestId: body.requestId,
+        responseText: JSON.stringify({
+            success: true,
+            requestId: body.requestId,
+            dependencies: {
+                rows: [],
+                removed: []
+            },
+            tasks: tasks,
+        }),
+        delay: 400
+    };
+});
 
 export default ganttProps;
