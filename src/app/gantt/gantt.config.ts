@@ -5,11 +5,7 @@ import '../lib/StatusColumn.js';
 import '../lib/GanttOverride.js';
 import Task from '../lib/Task.js';
 import Project from '../lib/Project.js';
-import { AjaxHelper, TaskModel } from '@bryntum/gantt'
-
-function generateRandomId() {
-    return Math.random().toString(36).substr(2, 9); // Random string of 9 characters
-  }
+import { AjaxHelper } from '@bryntum/gantt'
 
 const project = new Project({
     // *** start test
@@ -24,9 +20,8 @@ const project = new Project({
     taskStore: {
         listeners: {
             add: () => {
-                for (let i = 0; i < 1000000000; ++i) {
-
-                }
+                // keep busy for a while to trigger the sync bug
+                // for (let i = 0; i < 1000000000; ++i) {}
             },
         }
     },
@@ -82,35 +77,6 @@ const ganttProps : BryntumGanttProps = {
         { type : 'latestartdate' },
         { type : 'lateenddate' },
         { type : 'addnew' }
-
-        /*
-                { type : 'wbs', hidden : true },
-                { type : 'name', width : 250, showWbs : true },
-                { type : 'startdate' },
-                { type : 'duration' },
-                { type : 'resourceassignment', width : 120, showAvatars : true },
-                { type : 'percentdone', mode : 'circle', width : 70 },
-                {
-                    type  : 'predecessor',
-                    width : 112
-                },
-                {
-                    type  : 'successor',
-                    width : 112
-                },
-                { type : 'schedulingmodecolumn' },
-                { type : 'calendar' },
-                { type : 'constrainttype' },
-                { type : 'constraintdate' },
-                // @ts-ignore This is an application custom column
-                { type : 'statuscolumn' },
-                {
-                    type  : 'date',
-                    text  : 'Deadline',
-                    field : 'deadline'
-                },
-                { type : 'addnew' }
-        */
     ],
 
     subGridConfigs : {
@@ -140,10 +106,6 @@ const ganttProps : BryntumGanttProps = {
     filterFeature : true,
 
     dependencyEditFeature : true,
-
-    timeRangesFeature : {
-        showCurrentTimeLine : true
-    },
 
     labelsFeature : {
         left : {
@@ -193,6 +155,5 @@ AjaxHelper.mockUrl('./sync-changes', (url: any, params: any, options: any) => {
         delay: 400
     };
 });
-
 
 export default ganttProps;
