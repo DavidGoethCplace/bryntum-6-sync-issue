@@ -20,7 +20,7 @@ const project = new Project({
         listeners: {
             add: () => {
                 // keep busy for a while to trigger the sync bug
-                // for (let i = 0; i < 1000000000; ++i) {}
+                for (let i = 0; i < 1000000000; ++i) {}
             },
         }
     },
