@@ -23,82 +23,39 @@ const project = new Project({
 
     taskStore: {
         listeners: {
-            add: (event) => {
-                const addedRecords = event.records;
-                if (addedRecords?.length > 0) {
-                    addedRecords.forEach((record: TaskModel & { wbsCode: string, isValid: boolean }) => {
-                        record.set('name', generateRandomId());
-                        //console.log('taskStore.add event', record.wbsCode + ' ' + record.get('Name'), record.get('Id'), record.isValid);
-                    });
+            add: () => {
                 for (let i = 0; i < 1000000000; ++i) {
 
-                }    
                 }
             },
-            catchAll: (event: any) => {
-                //console.log('taskStore.catchAll', event.eventName);
-            }
         }
     },
-    // *** end test
 
-    // autoSetConstraints : true,
     // Let the Project know we want to use our own Task model with custom fields / methods
     taskModelClass     : Task,
     transport          : {
         load : {
             url : 'assets/data/launch-saas.json'
         },
-
-        // *** start test
         sync : {
             url : './sync-changes'
         }
-        // *** end test
     },
     autoLoad : true,
 
-    // The State TrackingManager, which the UndoRedo widget in the toolbar uses
     stm : {
-        // NOTE, that this option does not enable the STM itself, this is done by the `undoredo` widget, defined in the toolbar
-        // If you don't use `undoredo` widget in your app, you need to enable STM manually: `stm.enable()`,
-        // otherwise, it won't be tracking changes in the data
-        // It's usually best to enable STM after the initial data loading is completed.
         autoRecord : true
     },
-
-    // This config enables response validation and dumping of found errors to the browser console.
-    // It's meant to be used as a development stage helper only, so please set it to false for production systems.
     validateResponse : true
 },);
 
-// *** start test
-let modifiedTasks = [];
-let removedTasks = [];
-let requestId = null;
-// *** end test
-
 const ganttProps : BryntumGanttProps = {
-    // *** start test
     showDirty: true,
     scrollTaskIntoViewOnCellClick: true,
 
     cellEditFeature: {
         addToCurrentParent: true,
     },
-    // rowReorder: {
-    //     gripOnly: true,
-    //     showGrip: true,
-    //     // Preserve sorters after a drop operation, if that operation leads to the store still being sorted.
-    //     preserveSorters: true,
-    // },
-    // fillHandle: true,
-    // *** end test
-
-    dependencies: {
-        //@ts-ignore
-        drawOnScroll: false,
-      },
 
     dependencyIdField : 'wbsCode',
     selectionMode     : {
@@ -156,18 +113,7 @@ const ganttProps : BryntumGanttProps = {
         */
     ],
 
-    // *** start test
-    listeners: {
-        catchAll: (event) => {
-            //console.log('gantt.catchAll', event.eventName);
-        }
-    },
-    // *** end test
-
     subGridConfigs : {
-        fixed : {
-            flex : 3
-        },
         locked : {
             flex : 3
         },
@@ -177,13 +123,6 @@ const ganttProps : BryntumGanttProps = {
     },
 
     columnLines : false,
-
-    rowReorderFeature: {
-        gripOnly: true,
-        showGrip: true,
-        // Preserve sorters after a drop operation, if that operation leads to the store still being sorted.
-        preserveSorters: true,
-      },
 
     rollupsFeature : {
         disabled : true
@@ -225,13 +164,11 @@ function randomInt(): number {
     return Math.floor(Math.random() * (Number.MAX_SAFE_INTEGER));
 }
 
-// *** start test
 AjaxHelper.mockUrl('./sync-changes', (url: any, params: any, options: any) => {
     const body = JSON.parse(options.body);
     const tasks = {
         rows: (body.tasks.added as any[]) ?? [],
         removed : body.tasks.removed ?? [],
-        //updated: body.tasks.updated ?? [],
     };
 
     tasks.rows = tasks.rows.map((entry) => (
@@ -256,7 +193,6 @@ AjaxHelper.mockUrl('./sync-changes', (url: any, params: any, options: any) => {
         delay: 400
     };
 });
-// *** end test
 
 
 export default ganttProps;
